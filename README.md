@@ -1,4 +1,5 @@
 # SUB2 repo
 
 random line
-random line
+
+concurrent change on another submodule 2
