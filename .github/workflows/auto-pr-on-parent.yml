@@ -1,0 +1,34 @@
+name: Auto PR on Parent Repo Dispatcher
+
+on:
+  pull_request:
+    types: [ closed ]
+
+jobs:
+  auto-pr:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Always run
+      run: |
+        echo "event ${GITHUB_EVENT_NAME}"
+        echo "state ${{ github.event.pull_request.state }}"
+        echo "number ${{ github.event.pull_request.number }}"
+        echo "sha1 ${{ github.event.pull_request.merged_commit_sha }}"
+        echo "sha2 ${GITHUB_SHA}"
+        echo "sha3 ${{ github.event.pull_request.head.sha }}"
+        echo "sha4 ${{ github.event.pull_request.base.sha }}"
+        echo "title ${{ github.event.pull_request.title }}"
+        echo "merged ${{ github.event.pull_request.merged }}"
+        echo "commits ${{ github.event.pull_request.commits }}"
+        echo "ref ${{ github.event.pull_request.base.ref }}"
+    - name: APOP Notify Parent
+      if: ${{ github.event.pull_request.merged }} == 'true'
+      run: |
+        REPOSHORT="$(echo $GITHUB_REPOSITORY | sed 's#.*/##g')"
+        echo "pull request succeeded, will take action here"; \
+        curl -s -X POST https://api.github.com/repos/hid-gs/autoaction-main/dispatches \
+        -H 'Accept: application/vnd.github.v3+json' \
+        -u ${{ secrets.ACCESS_TOKEN }} \
+        --data '{"event_type": "apop-pr-merged", "client_payload": { "repository": "'"$REPOSHORT"'", "sha": "'"$GITHUB_SHA"'"     }}'
+
+
