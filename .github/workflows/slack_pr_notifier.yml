@@ -1,0 +1,52 @@
+name: Slack PR Notifier
+
+on:
+  pull_request:
+
+jobs:
+  slack-pr-notify:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Notify via Slack
+      env:
+        SLACK_URL: ${{ secrets.SLACK_URL }}
+      run: |
+        env | sort
+        PR=$(echo ${GITHUB_REF} | sed 's#refs/pull/\([0-9]*\)/merge#\1#g')
+        PR_LINK="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/pull/${PR}/files#submit-review"
+
+        if [ "${SLACK_URL:-UNDEFINED}" == "UNDEFINED" ]; then
+          echo "missing slack url variable"
+          exit
+        fi
+
+        curl -s -X POST -d "payload={
+            \"blocks\":[{
+              \"type\":\"header\",
+              \"text\":{
+                  \"type\":\"plain_text\",
+                  \"text\":\"PR on Project\",
+                  \"emoji\":true
+                }
+              },{
+              \"type\":\"section\",
+              \"text\":{
+                \"type\":\"mrkdwn\",
+                \"text\":\"New PR created on $GITHUB_REPOSITORY\"
+                },
+              \"accessory\":{
+                \"type\":\"button\",
+                \"text\":{
+                  \"type\":\"plain_text\",
+                  \"text\":\"Review PR\",
+                  \"emoji\":true
+                },
+                \"value\":\"click_me_pull\",
+                \"url\":\"$PR_LINK\",
+                \"action_id\":\"button-action\"
+                }
+              }]
+            }" $SLACK_URL
+
+
+
